@@ -1,0 +1,62 @@
+{
+  "storeTitle": "Закладки и марки",
+  "books": [
+    {
+      "id_books": 1,
+      "title": "The Lord of the Rings",
+      "rating": 4.79999999999999999999,
+      "price": {
+        "amount": 13.57,
+        "currency": "USD"
+      },
+      "inventory": {
+        "used": 10,
+        "new": 20
+      },
+      "genres": [
+        {
+          "id_genres_in_books": "",
+          "subgenre": "High fantasy",
+          "name": "Fantasy"
+        },
+        {
+          "name": "Adventure"
+        }
+      ],
+      "authors": [
+        "John Ronald Reuel Tolkien"
+      ],
+      "publisher": "Mariner Books",
+      "publicationDate": "August 14, 2012"
+    },
+    {
+      "bookId": 2,
+      "title": "The Alchemist",
+      "rating": 4.6,
+      "price": {
+        "amount": 10.13,
+        "currency": "USD"
+      },
+      "inventory": {
+        "used": 1,
+        "new": 35
+      },
+      "genres": [
+        {
+          "name": "Quest"
+        },
+        {
+          "name": "Adventure"
+        },
+        {
+          "name": "Fantasy"
+        }
+      ],
+      "authors": [
+        "Paulo Coelho"
+      ],
+      "publisher": "HarperOne",
+      "publicationDate": "April 15, 2014"
+    }
+  ]
+}

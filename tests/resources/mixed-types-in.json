@@ -1,0 +1,49 @@
+[
+  {
+    "": 1
+  },
+  {
+    "": []
+  },
+  {
+    "": {}
+  },
+  {
+    "": ""
+  },
+  {
+    "": 1.0
+  },
+  {
+    "": null
+  },
+  {
+    "": [
+      {
+        "": 1
+      },
+      {
+        "list": "Im special keyword"
+      },
+      {
+        "list": "Im special keyword",
+        "not_list": "Im another value"
+      },
+      {
+        "list": "Im special keyword",
+        "": "Im another value in empty key"
+      },
+      {
+        "list": "Im special keyword",
+        "not_list": "Im another value"
+      }
+    ]
+  },
+  {
+    "": [
+      1,
+      2,
+      3
+    ]
+  }
+]

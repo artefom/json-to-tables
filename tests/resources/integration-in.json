@@ -1,0 +1,40 @@
+{
+  "data": {
+    "id": "NEXP",
+    "type": "marketing_carrier",
+    "attributes": {
+      "expected_go_live": "",
+      "status": "active",
+      "supports_live_connection_data": true,
+      "sell_ban_hours_before": null,
+      "carrier_type": "marketing_carrier",
+      "airport_connection": false,
+      "comment": "",
+      "activation_date": "2016-02-01",
+      "ready_date": "2015-05-01"
+    },
+    "relationships": {
+      "technical_cancellation": {
+        "data": {
+          "type": "technical_cancellation",
+          "id": "TECHNICAL-CANCELLATION-NEXP"
+        }
+      }
+    }
+  },
+  "included": [
+    {
+      "id": "TECHNICAL-CANCELLATION-NEXP",
+      "type": "technical_cancellation",
+      "attributes": {
+        "allowed": false,
+        "method_type": "",
+        "email": "dummy@email.com",
+        "minutes": 0
+      }
+    }
+  ],
+  "jsonapi": {
+    "version": "1.0"
+  }
+}

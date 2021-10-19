@@ -1,0 +1,179 @@
+{
+    "data": [
+        {
+            "id": "DEFAMFMH",
+            "type": "stations",
+            "attributes": {
+                "station_type": "bus_station",
+                "code": "DEFAMFMH",
+                "name": "Frankfurt Main Central Train Station (Southside)",
+                "longitude": 8.663446,
+                "latitude": 50.105608,
+                "street_and_number": "Mannheimer Straße 2",
+                "zip_code": "60327",
+                "time_zone": "Europe/Berlin",
+                "description": "The bus stop on the south side of Frankfurt's central station is located between the train station building and the intersection of Mannheimer Strasse and Karlsruher Str. The stop is easily accessible from the station's southern exit."
+            },
+            "relationships": {
+                "area": {
+                    "data": null
+                },
+                "city": {
+                    "data": {
+                        "type": "cities",
+                        "id": "DEFAM"
+                    }
+                }
+            }
+        },
+        {
+            "id": "DEQMZHBF",
+            "type": "stations",
+            "attributes": {
+                "station_type": "bus_station",
+                "code": "DEQMZHBF",
+                "name": "Mainz Central Train Station",
+                "longitude": 8.257835,
+                "latitude": 50.00314,
+                "street_and_number": "Kaiser-Wilhelm-Ring 8",
+                "zip_code": "55118",
+                "time_zone": "Europe/Berlin",
+                "description": "The intercity bus stop is located on Kaiser-Wilhelm-Ring, at Mainz Main Train Station. A discount grocery store is located directly opposite."
+            },
+            "relationships": {
+                "area": {
+                    "data": null
+                },
+                "city": {
+                    "data": {
+                        "type": "cities",
+                        "id": "DEQMZ"
+                    }
+                }
+            }
+        },
+        {
+            "id": "DEROEBHF",
+            "type": "stations",
+            "attributes": {
+                "station_type": "bus_station",
+                "code": "DEROEBHF",
+                "name": "Rosenheim Main Train Station",
+                "longitude": 12.11912000000007,
+                "latitude": 47.85098,
+                "street_and_number": "Südtiroler Platz",
+                "zip_code": "83022",
+                "time_zone": "Europe/Berlin",
+                "description": "The stop is located in the bus parking spaces within the P14 Bahnhof Nord parking area, located near the north entrance of the train station."
+            },
+            "relationships": {
+                "area": {
+                    "data": null
+                },
+                "city": {
+                    "data": {
+                        "type": "cities",
+                        "id": "DEROE"
+                    }
+                }
+            }
+        },
+        {
+            "id": "DEHAJHZO",
+            "type": "stations",
+            "attributes": {
+                "station_type": "train_station",
+                "code": "DEHAJHZO",
+                "name": "Hannover Central Train Station",
+                "longitude": 9.741069,
+                "latitude": 52.3764864,
+                "street_and_number": "Ernst-August-Platz 1",
+                "zip_code": "30159",
+                "time_zone": "Europe/Berlin",
+                "description": "The train station is on Ernst-August-Platz, opposite to Galeria Kaufhof Hannover. Passengers should find the exact platform on the information display board based on the departure time and the destination."
+            },
+            "relationships": {
+                "area": {
+                    "data": null
+                },
+                "city": {
+                    "data": {
+                        "type": "cities",
+                        "id": "DEHAJ"
+                    }
+                }
+            }
+        },
+        {
+            "id": "DEMUCZOB",
+            "type": "stations",
+            "attributes": {
+                "station_type": "bus_station",
+                "code": "DEMUCZOB",
+                "name": "Munich Central Bus Station",
+                "longitude": 11.549866,
+                "latitude": 48.142346,
+                "street_and_number": "Arnulfstraße 21",
+                "zip_code": "80335",
+                "time_zone": "Europe/Berlin",
+                "description": "Munich central bus station is located in the city centre, next to the main train station. Please check with the information desk to find the exact platform from where your bus carrier departs. Exception: for GoOpti passengers, please stand at Hackerbrücke 4."
+            },
+            "relationships": {
+                "area": {
+                    "data": null
+                },
+                "city": {
+                    "data": {
+                        "type": "cities",
+                        "id": "DEMUC"
+                    }
+                }
+            }
+        }
+    ],
+    "included": [
+        {
+            "id": "DEFAM",
+            "type": "cities",
+            "attributes": {
+                "code": "DEFAM",
+                "name": "Frankfurt am Main"
+            }
+        },
+        {
+            "id": "DEQMZ",
+            "type": "cities",
+            "attributes": {
+                "code": "DEQMZ",
+                "name": "Mainz"
+            }
+        },
+        {
+            "id": "DEROE",
+            "type": "cities",
+            "attributes": {
+                "code": "DEROE",
+                "name": "Rosenheim"
+            }
+        },
+        {
+            "id": "DEHAJ",
+            "type": "cities",
+            "attributes": {
+                "code": "DEHAJ",
+                "name": "Hanover"
+            }
+        },
+        {
+            "id": "DEMUC",
+            "type": "cities",
+            "attributes": {
+                "code": "DEMUC",
+                "name": "Munich"
+            }
+        }
+    ],
+    "jsonapi": {
+        "version": "1.0"
+    }
+}
