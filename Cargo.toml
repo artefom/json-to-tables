@@ -12,6 +12,7 @@ regex = "1.5"
 lazy_static = "*"
 structopt = "*"
 cached = "*"
+glob = "*"
 
 [dev-dependencies]
 rstest = "*"
