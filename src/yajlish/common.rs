@@ -17,6 +17,8 @@
 
 use std::collections::VecDeque;
 
+use json::JsonValue;
+
 /// The Status that each Handler method returns.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Status {
@@ -150,20 +152,14 @@ impl Context {
 
 /// Implement this trait to handle parse events.
 pub trait Handler {
-    /// Latest parsed value was a null.
-    fn handle_null(&mut self, ctx: &Context) -> Status;
-
-    /// Latest parsed value was a double.
-    fn handle_double(&mut self, ctx: &Context, val: f64) -> Status;
-
-    /// Latest parsed value was an int.
-    fn handle_int(&mut self, ctx: &Context, val: i64) -> Status;
-
-    /// Latest parsed value was a bool.
-    fn handle_bool(&mut self, ctx: &Context, val: bool) -> Status;
-
-    /// Latest parsed value was a string.
-    fn handle_string(&mut self, ctx: &Context, val: &str) -> Status;
+    /// Latest parsed value as JsonValue
+    /// includes:
+    /// null
+    /// double
+    /// int
+    /// bool
+    /// string
+    fn handle_json_value(&mut self, ctx: &Context, val: JsonValue) -> Status;
 
     /// Latest parsed value was a left curly brace ({).
     fn handle_start_map(&mut self, ctx: &Context) -> Status;

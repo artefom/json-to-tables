@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
-use std::mem::{swap};
+use std::mem::swap;
 use std::string::String;
 use std::vec::Vec;
 
 use cached::SizedCache;
 use json;
+use json::JsonValue;
 use json::object::Object;
 use regex::Regex;
 
@@ -122,7 +123,7 @@ impl<'a> NestedObjectHandler<'a> {
         }
     }
 
-    pub fn handle_json_value(&mut self, value: json::JsonValue) {
+    pub fn _handle_json_value(&mut self, value: json::JsonValue) {
         let key = nested_key_to_str(&self.current_nested_key);
         self.current_object[key] = value;
     }
@@ -180,43 +181,9 @@ impl<'a> NestedObjectHandler<'a> {
 
 
 impl<'a> Handler for NestedObjectHandler<'a> {
-    fn handle_null(&mut self, _ctx: &Context) -> Status {
-        self.handle_json_value(json::JsonValue::Null);
-        Status::Continue
-    }
 
-    fn handle_double(&mut self, _ctx: &Context, val: f64) -> Status {
-        self.handle_json_value(json::JsonValue::from(val));
-
-        if self.at_list_or_document_root() {
-            self.publish_object()
-        }
-        Status::Continue
-    }
-
-    fn handle_int(&mut self, _ctx: &Context, val: i64) -> Status {
-        self.handle_json_value(json::JsonValue::from(val));
-
-        if self.at_list_or_document_root() {
-            self.publish_object()
-        }
-        Status::Continue
-    }
-
-    fn handle_bool(&mut self, _ctx: &Context, val: bool) -> Status {
-        self.handle_json_value(json::JsonValue::from(val));
-
-        if self.at_list_or_document_root() {
-            self.publish_object()
-        }
-        Status::Continue
-    }
-
-    fn handle_string(&mut self, _ctx: &Context, val: &str) -> Status {
-        let json_value_raw = json::parse(val);
-        let json_value_parsed = json_value_raw.unwrap();
-        let key_parsed = json_value_parsed.as_str().unwrap();
-        self.handle_json_value(json::JsonValue::from(key_parsed));
+    fn handle_json_value(&mut self, _ctx: &Context, val: JsonValue) -> Status {
+        self._handle_json_value(val);
         if self.at_list_or_document_root() {
             self.publish_object()
         }
@@ -238,11 +205,8 @@ impl<'a> Handler for NestedObjectHandler<'a> {
     }
 
     fn handle_map_key(&mut self, _ctx: &Context, key: &str) -> Status {
-        let json_value_raw = json::parse(key);
-        let json_value_parsed = json_value_raw.unwrap();
-        let key_parsed = json_value_parsed.as_str().unwrap();
         let current_nested_key_size = self.current_nested_key.len();
-        self.current_nested_key[current_nested_key_size - 1] = String::from(key_parsed);
+        self.current_nested_key[current_nested_key_size - 1] = String::from(key);
         Status::Continue
     }
 

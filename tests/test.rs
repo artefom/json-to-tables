@@ -10,7 +10,7 @@ use json::JsonValue;
 use json::object::Object;
 use rstest::*;
 
-use json_to_tables::{consumer_json, parser};
+use json_to_tables::{consumer_json, parser, yajlish::Parser};
 
 /// Convert input stream to tables in json format
 pub fn to_json_tables<B: io::BufRead>(root_name: String, input: &mut B) -> JsonValue {
@@ -20,7 +20,7 @@ pub fn to_json_tables<B: io::BufRead>(root_name: String, input: &mut B) -> JsonV
         consumer_json::consume_to_json(&mut result, table_name, object);
 
     let mut handler = parser::NestedObjectHandler::new(root_name, 0, &mut consumer);
-    let mut parser = yajlish::Parser::new(&mut handler);
+    let mut parser = Parser::new(&mut handler);
 
     // Run parser
     parser.parse(input).unwrap();

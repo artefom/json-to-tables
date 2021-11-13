@@ -17,6 +17,7 @@
 
 use std::io::BufRead;
 
+use json::JsonValue;
 use json_tools::{Buffer, BufferType, Lexer, Token, TokenType};
 
 pub use common::{Context, Enclosing, Handler, ParserStatus, Status};
@@ -122,7 +123,7 @@ impl<'a, H: Handler> Parser<'a, H> {
                          kind: TokenType::Null,
                          ..
                      }) => {
-                    let status = self.handler.handle_null(context);
+                    let status = self.handler.handle_json_value(context, JsonValue::Null);
 
                     update_context_status_value(context);
 
@@ -135,9 +136,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                     let status = match buf {
                         Buffer::MultiByte(b) => match std::str::from_utf8(&b) {
                             Ok(s) => match s.parse::<i64>() {
-                                Ok(num) => self.handler.handle_int(context, num),
+                                Ok(num) => self.handler.handle_json_value(context, JsonValue::from(num)),
                                 Err(_) => match s.parse::<f64>() {
-                                    Ok(num) => self.handler.handle_double(context, num),
+                                    Ok(num) => self.handler.handle_json_value(context, JsonValue::from(num)),
                                     Err(_) => panic!("Could not parse number as i64 or f64"),
                                 },
                             },
@@ -154,6 +155,8 @@ impl<'a, H: Handler> Parser<'a, H> {
                          kind: TokenType::String,
                          buf,
                      }) => {
+
+                    // Read raw bytes to string
                     let string = match buf {
                         Buffer::MultiByte(ref b) => match std::str::from_utf8(b) {
                             Ok(s) => s,
@@ -162,24 +165,38 @@ impl<'a, H: Handler> Parser<'a, H> {
                         Buffer::Span(_) => panic!("Unexpected span in string buffer"),
                     };
 
+                    // Un-parse string from raw bytes to json values
+                    let string = match json::parse(string) {
+                        Ok(s) => {
+                            s.to_string()
+                        }
+                        Err(_) => {
+                            panic!("Could not parse json string value")
+                        }
+                    };
+
+                    // let json_value_raw = json::parse(val);
+                    // let json_value_parsed = json_value_raw.unwrap();
+                    // let key_parsed = json_value_parsed.as_str().unwrap();
+
                     if context.parser_status() == ParserStatus::ArrayNeedVal
                         || context.parser_status() == ParserStatus::ArrayStart
                     {
-                        let status = self.handler.handle_string(context, string);
+                        let status = self.handler.handle_json_value(context, JsonValue::from(string));
                         context.update_status(ParserStatus::ArrayGotVal);
                         Some(status)
                     } else if context.parser_status() == ParserStatus::MapNeedVal {
-                        let status = self.handler.handle_string(context, string);
+                        let status = self.handler.handle_json_value(context, JsonValue::from(string));
                         context.update_status(ParserStatus::MapGotVal);
                         Some(status)
                     } else if context.parser_status() == ParserStatus::Start {
-                        let status = self.handler.handle_string(context, string);
+                        let status = self.handler.handle_json_value(context, JsonValue::from(string));
                         context.update_status(ParserStatus::GotValue);
                         Some(status)
                     } else if context.parser_status() == ParserStatus::MapNeedKey
                         || context.parser_status() == ParserStatus::MapStart
                     {
-                        let status = self.handler.handle_map_key(context, string);
+                        let status = self.handler.handle_map_key(context, string.as_str());
                         context.update_status(ParserStatus::MapSep);
                         Some(status)
                     } else {
@@ -191,7 +208,7 @@ impl<'a, H: Handler> Parser<'a, H> {
                          kind: TokenType::BooleanTrue,
                          ..
                      }) => {
-                    let status = self.handler.handle_bool(context, true);
+                    let status = self.handler.handle_json_value(context, JsonValue::from(true));
 
                     update_context_status_value(context);
 
@@ -201,7 +218,7 @@ impl<'a, H: Handler> Parser<'a, H> {
                          kind: TokenType::BooleanFalse,
                          ..
                      }) => {
-                    let status = self.handler.handle_bool(context, false);
+                    let status = self.handler.handle_json_value(context, JsonValue::from(false));
 
                     update_context_status_value(context);
 

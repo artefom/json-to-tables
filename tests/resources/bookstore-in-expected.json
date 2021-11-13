@@ -56,7 +56,7 @@
         },
         {
             "bookId": 2,
-            "title": "The Alchemist",
+            "title": "The \"Alchemist\" 1\\2",
             "rating": 4.6,
             "amount_in_price": 10.13,
             "currency_in_price": "USD",
