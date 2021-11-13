@@ -318,11 +318,11 @@ dependencies = [
  "cached",
  "glob",
  "json",
+ "json-tools",
  "lazy_static",
  "regex",
  "rstest",
  "structopt",
- "yajlish",
 ]
 
 [[package]]
@@ -579,12 +579,3 @@ name = "winapi-x86_64-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
-
-[[package]]
-name = "yajlish"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2d65fc3acbb71146e83fb9b95aa1a0e8f695bf8d8fecfd2dce81139bbbca469"
-dependencies = [
- "json-tools",
-]

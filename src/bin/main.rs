@@ -9,6 +9,7 @@ use json::object::Object;
 use structopt::StructOpt;
 
 use json_to_tables;
+use json_to_tables::yajlish::Parser;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "Json-to-tables",
@@ -61,7 +62,7 @@ fn main() {
 
                     let mut handler = json_to_tables::parser::NestedObjectHandler::new(
                         opt.name.clone(), 0, &mut consumer);
-                    let mut parser = yajlish::Parser::new(&mut handler);
+                    let mut parser = Parser::new(&mut handler);
 
                     match parser.parse(&mut reader) {
                         Err(e) => {
