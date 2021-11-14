@@ -1,31 +1,21 @@
 extern crate json_to_tables;
 
 use std::fs::File;
-use std::io;
-use std::io::{BufReader, Read, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::path::PathBuf;
 
-use json;
-use json::JsonValue;
-use json::object::Object;
 use rstest::*;
+use serde::Serialize;
+use serde_json::{Map, Value as JsonValue};
 
-use json_to_tables::{consumer_json, parser, yajlish::Parser};
+use json_to_tables::database::DatabaseJson;
+use json_to_tables::read;
 
 /// Convert input stream to tables in json format
-pub fn to_json_tables<B: io::BufRead>(root_name: String, input: &mut B) -> JsonValue {
-    let mut result = json::JsonValue::new_object();
-
-    let mut consumer = |table_name: &String, object: Object|
-        consumer_json::consume_to_json(&mut result, table_name, object);
-
-    let mut handler = parser::NestedObjectHandler::new(root_name, 0, &mut consumer);
-    let mut parser = Parser::new(&mut handler);
-
-    // Run parser
-    parser.parse(input).unwrap();
-
-    // Return resulting object
+pub fn read_to_json<B: BufRead>(root_name: String, input: B) -> JsonValue {
+    let mut result: JsonValue = JsonValue::Object(Map::new());
+    read::read_to_database(DatabaseJson::new(root_name, &mut result),
+                           input);
     result
 }
 
@@ -53,13 +43,18 @@ fn read_test_case(test_case: &String, expected: bool) -> BufReader<File> {
 fn write_actual(test_case: &String, obj: &JsonValue) {
     let path = test_case_path(test_case, true);
     let mut file = File::create(path.as_path()).unwrap();
-    file.write_all(obj.pretty(4).as_bytes()).unwrap();
+
+    let buf = Vec::new();
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut ser = serde_json::Serializer::with_formatter(buf, formatter);
+
+    obj.serialize(&mut ser).unwrap();
+    let obj_pretty = String::from_utf8(ser.into_inner()).unwrap();
+    file.write_all(obj_pretty.as_bytes()).unwrap();
 }
 
-fn compare_expected(expected: &String, actual_json: &JsonValue) {
-    let expected_json = json::parse(expected).unwrap();
-
-    assert_eq!(expected_json, *actual_json);
+fn compare_expected(_expected: &String, _actual_json: &JsonValue) {
+    todo!()
 }
 
 #[rstest]
@@ -82,8 +77,8 @@ fn test_json_to_tables(#[case] test_case: String) {
     let mut reader = read_test_case(&test_case, true);
     reader.read_to_string(&mut expected).unwrap();
 
-    let actual = to_json_tables(test_case.clone(),
-                                &mut read_test_case(&test_case, false));
+    let actual = read_to_json(test_case.clone(),
+                              &mut read_test_case(&test_case, false));
 
     if env!("REWRITE_EXPECTED") == "1" {
         write_actual(&test_case, &actual);

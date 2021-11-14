@@ -17,7 +17,7 @@
 
 use std::collections::VecDeque;
 
-use json::JsonValue;
+use serde_json;
 
 /// The Status that each Handler method returns.
 #[derive(Debug, PartialEq, Eq)]
@@ -159,7 +159,7 @@ pub trait Handler {
     /// int
     /// bool
     /// string
-    fn handle_json_value(&mut self, ctx: &Context, val: JsonValue) -> Status;
+    fn handle_json_value(&mut self, ctx: &Context, val: serde_json::Value) -> Status;
 
     /// Latest parsed value was a left curly brace ({).
     fn handle_start_map(&mut self, ctx: &Context) -> Status;

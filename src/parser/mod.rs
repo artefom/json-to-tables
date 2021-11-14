@@ -4,37 +4,158 @@ use std::mem::swap;
 use std::string::String;
 use std::vec::Vec;
 
-use cached::SizedCache;
-use json;
-use json::JsonValue;
-use json::object::Object;
-use regex::Regex;
+use serde_json::Value as JsonValue;
+
+pub use models::{JsonPath, TableLocation, TableRecord};
 
 use crate::yajlish::{Context, Handler, Status};
 
 pub mod models;
 
-
+/// Handles objects within list
 #[derive(Debug)]
-struct ListStackElement {
-    object: Object,
+pub struct ObjectHandler {
     object_id: i32,
-    nested_key: Vec<String>,
+    path: JsonPath,
+    // Current object id within list
+    rec: TableRecord,
+}
+
+impl ObjectHandler {
+    pub fn new() -> ObjectHandler {
+        ObjectHandler {
+            object_id: 0,
+            path: JsonPath::new(),
+            rec: TableRecord::new(),
+        }
+    }
+
+    /// Optionally produces a record if it's creation is finished
+    fn pop(&mut self) -> Option<(i32, TableRecord)> {
+        // Do not produce elements if we are in the process of building object
+        if self.path.len() != 0 { return None; }
+
+        let mut new_rec = TableRecord::new();
+        swap(&mut self.rec, &mut new_rec);
+        let ret_value = Some((self.object_id, new_rec));
+        self.object_id += 1;
+        return ret_value;
+    }
+
+    fn handle_json_value(&mut self, val: JsonValue) {
+        self.rec.insert(self.path.clone(), val);
+    }
+
+    fn handle_start_map(&mut self) {
+        self.path.push(String::from(""));
+    }
+
+    fn handle_end_map(&mut self) {
+        self.path.pop();
+    }
+
+    fn handle_map_key(&mut self, key: &str) {
+        *self.path.last_mut().unwrap() = String::from(key);
+    }
+}
+
+/// Tree supported by HashMap that allows traversing up and down by JsonPath
+struct ObjectHandlerHashTree {
+    // List of all nodes
+    // Nodes contain link to all child ids and parent id
+    arena: Vec<(ObjectHandler, usize, HashMap<JsonPath, usize>)>,
+    // Defines current node
+    current_id: usize,
+
+    // Support field stored for fast access
+    current_path: Vec<JsonPath>,
+}
+
+impl ObjectHandlerHashTree {
+    pub fn new() -> ObjectHandlerHashTree {
+        ObjectHandlerHashTree {
+            arena: vec![(ObjectHandler::new(), 0, HashMap::new())],
+            current_path: Vec::new(),
+            current_id: 0,
+        }
+    }
+
+    pub fn full_path(&mut self) -> &Vec<JsonPath> {
+        &self.current_path
+    }
+
+    fn current_tup(&self) -> &(ObjectHandler, usize, HashMap<JsonPath, usize>) {
+        &self.arena[self.current_id]
+    }
+
+    fn current_tup_mut(&mut self) -> &mut (ObjectHandler, usize, HashMap<JsonPath, usize>) {
+        &mut self.arena[self.current_id]
+    }
+
+    fn parent_tup(&self) -> Option<&(ObjectHandler, usize, HashMap<JsonPath, usize>)> {
+        let parent_id = self.current_tup().1;
+        if parent_id != self.current_id {
+            Some(&self.arena[parent_id])
+        } else {
+            None
+        }
+    }
+
+    pub fn current(&self) -> &ObjectHandler {
+        &self.current_tup().0
+    }
+
+    pub fn current_mut(&mut self) -> &mut ObjectHandler {
+        &mut self.current_tup_mut().0
+    }
+
+    pub fn parent(&self) -> Option<&ObjectHandler> {
+        match self.parent_tup() {
+            Some(t) => {
+                Some(&t.0)
+            }
+            None => {
+                None
+            }
+        }
+    }
+
+    pub fn go_up(&mut self) {
+        let cur_obj = self.current_tup();
+        let parent_id = cur_obj.1;
+        self.current_id = parent_id;
+        self.current_path.pop();
+    }
+
+    pub fn go_down(&mut self, path: &JsonPath) {
+        // Update current path
+        self.current_path.push(path.clone());
+
+        let current_itm = self.current_tup();
+
+        match current_itm.2.get(path) {
+            Some(down_id) => {
+                self.current_id = down_id.clone();
+            }
+            None => {
+                // Add link to child object to current object
+                let new_id = self.arena.len().clone();
+                self.current_tup_mut().2.insert(path.clone(), new_id);
+
+                // Create and insert new object, set current id to new object
+                self.arena.push((ObjectHandler::new(), self.current_id, HashMap::new()));
+                self.current_id = new_id;
+            }
+        };
+    }
 }
 
 pub struct NestedObjectHandler<'a> {
-    root_name: String,
+    // Path to current database being processed
+    handler_stack: ObjectHandlerHashTree,
 
-    // List stack
-    list_stack: Vec<ListStackElement>,
-
-    current_nested_key: Vec<String>,
-    current_object_id: i32,
-    current_object: Object,
-
-    array_ids: HashMap<String, i32>,
-
-    consumer: &'a mut dyn FnMut(&String, Object),
+    // stack of object handlers
+    consumer: &'a mut dyn FnMut(TableLocation, TableRecord),
 }
 
 impl<'a> Debug for NestedObjectHandler<'a> {
@@ -43,222 +164,80 @@ impl<'a> Debug for NestedObjectHandler<'a> {
     }
 }
 
-// find_escapes = re.compile(fr'_((?:{word})+)_', re.IGNORECASE)
-// return find_escapes.sub(fr'_\g<1>{word}_', s)
-
-// static REGEX = Regex::new(r"(?P<y>\d{4})-(?P<m>\d{2})-(?P<d>\d{2})");
-
-
-fn escape_id_prefix(s: &String) -> String {
-    lazy_static! {
-        static ref RE_UNDERSCORE: Regex = Regex::new("^(?P<w>(?:id)+)_").unwrap();
-    }
-
-    RE_UNDERSCORE.replace_all(s, "${w}id_").to_string()
-}
-
-fn escape_nested_key_element(s: &String) -> String {
-    lazy_static! {
-        static ref RE_JOIN: Regex = Regex::new("_(?P<w>(?:in)+)_").unwrap();
-        static ref RE_EMPTY: Regex = Regex::new("^(?P<w>(?:empty)+)$").unwrap();
-        static ref RE_LIST: Regex = Regex::new("^(?P<w>(?:list)+)$").unwrap();
-        static ref RE_UNDERSCORE: Regex = Regex::new("^_").unwrap();
-    }
-
-    if s == "" {
-        return String::from("empty");
-    }
-
-    let s = RE_JOIN.replace_all(s, "_${w}in_").to_string();
-    let s = RE_EMPTY.replace_all(&s, "${w}empty").to_string();
-    let s = RE_LIST.replace_all(&s, "${w}list").to_string();
-    let s = RE_UNDERSCORE.replace_all(&s, "tech_").to_string();
-
-    return s.clone();
-}
-
-cached! {NESTED_KEY_TO_STR: SizedCache<Vec<String>,String> = SizedCache::with_size(10000);
-fn nested_key_to_str(nested_key: &Vec<String>) -> String = {
-    let key;
-    if nested_key.len() == 0 {
-        key = String::from("list");
-    } else {
-        let mut nested_key_rev = nested_key.clone();
-        nested_key_rev.reverse();
-        let nested_keys_escaped = nested_key_rev.iter().map(escape_nested_key_element).collect::<Vec<String>>();
-        key = nested_keys_escaped.join("_in_");
-    }
-    escape_id_prefix(&key)
-}}
-
-fn escape_table_path_element(s: &String) -> String {
-    lazy_static! {
-        static ref RE_JOIN: Regex = Regex::new("_(?P<w>(?:lin)+)_").unwrap();
-    }
-    let s = RE_JOIN.replace_all(s, "_${w}lin_").to_string();
-    return s.clone();
-}
-
-cached! {TABLE_PATH_TO_STR: SizedCache<Vec<String>,String> = SizedCache::with_size(10000);
-fn table_path_to_str(nested_key: &Vec<String>) -> String = {
-    if nested_key.len() == 0 {
-        return String::from("");
-    } else {
-        let nested_key_rev = nested_key.clone();
-        let nested_keys_escaped = nested_key_rev.iter().map(escape_table_path_element).collect::<Vec<String>>();
-        return nested_keys_escaped.join("_lin_");
-    }
-}}
 
 impl<'a> NestedObjectHandler<'a> {
-    pub fn new(root_name: String, root_id: i32, consumer: &'a mut dyn FnMut(&String, Object)) -> NestedObjectHandler {
+    pub fn new(consumer: &'a mut dyn FnMut(TableLocation, TableRecord)) -> NestedObjectHandler<'a> {
         NestedObjectHandler {
-            root_name,
-            list_stack: Vec::new(),
-            current_nested_key: Vec::new(),
-            current_object: Object::new(),
-            current_object_id: root_id,
-            array_ids: HashMap::new(),
+            handler_stack: ObjectHandlerHashTree::new(),
             consumer,
         }
     }
 
-    pub fn _handle_json_value(&mut self, value: json::JsonValue) {
-        let key = nested_key_to_str(&self.current_nested_key);
-        self.current_object[key] = value;
+    fn current_handler(&self) -> &ObjectHandler {
+        self.handler_stack.current()
     }
 
-    pub fn at_list_or_document_root(&mut self) -> bool {
-        self.current_nested_key.len() == 0
+    fn current_handler_mut(&mut self) -> &mut ObjectHandler {
+        self.handler_stack.current_mut()
     }
 
-    pub fn current_list_path(&mut self) -> String {
-        let mut list_path = Vec::<String>::new();
-        for ls in self.list_stack.iter() {
-            list_path.push(nested_key_to_str(&ls.nested_key));
-        }
-        list_path.reverse();
-        list_path.push(self.root_name.clone());
-        table_path_to_str(&list_path)
+    fn parent_handler(&self) -> Option<&ObjectHandler> {
+        self.handler_stack.parent()
     }
 
-    pub fn parent_list_path(&mut self) -> String {
-        let mut list_path = Vec::<String>::new();
-        for ls in self.list_stack.iter() {
-            list_path.push(nested_key_to_str(&ls.nested_key));
-        }
-        list_path.pop();
-        list_path.reverse();
-        list_path.push(self.root_name.clone());
-        table_path_to_str(&list_path)
-    }
-
-    pub fn publish_object(&mut self) {
-        let table_name = self.current_list_path();
-        let parent_table_name = self.parent_list_path();
-
-
-        // Set object ids
-        let current_id = self.current_object_id;
-        self.current_object[String::from("id_") + &table_name] = json::JsonValue::from(current_id);
-        match self.list_stack.last() {
-            Some(last_stack) => {
-                self.current_object[String::from("id_") + &parent_table_name] =
-                    json::JsonValue::from(last_stack.object_id);
+    fn try_pop(&mut self) {
+        match self.current_handler_mut().pop() {
+            Some((rec_id, rec)) => {
+                let table_location = TableLocation {
+                    table_path: self.handler_stack.full_path().clone(),
+                    object_id: rec_id,
+                    parent_object_id: match self.parent_handler() {
+                        Some(p) => {
+                            p.object_id
+                        }
+                        None => { 0 }
+                    },
+                };
+                (self.consumer)(table_location, rec);
             }
             None => {}
-        };
-        self.current_object_id += 1;
-
-        // Pop object via swap
-        let mut pop_object = Object::new();
-        swap(&mut pop_object, &mut self.current_object);
-
-        // Publishing object
-        (self.consumer)(&table_name, pop_object);
+        }
     }
 }
 
 
 impl<'a> Handler for NestedObjectHandler<'a> {
-
     fn handle_json_value(&mut self, _ctx: &Context, val: JsonValue) -> Status {
-        self._handle_json_value(val);
-        if self.at_list_or_document_root() {
-            self.publish_object()
-        }
+        self.current_handler_mut().handle_json_value(val);
+        self.try_pop();
         Status::Continue
     }
 
     fn handle_start_map(&mut self, _ctx: &Context) -> Status {
-        self.current_nested_key.push(String::new());
+        self.current_handler_mut().handle_start_map();
         Status::Continue
     }
 
     fn handle_end_map(&mut self, _ctx: &Context) -> Status {
-        self.current_nested_key.pop();
-
-        if self.at_list_or_document_root() {
-            self.publish_object()
-        }
+        self.current_handler_mut().handle_end_map();
+        self.try_pop();
         Status::Continue
     }
 
     fn handle_map_key(&mut self, _ctx: &Context, key: &str) -> Status {
-        let current_nested_key_size = self.current_nested_key.len();
-        self.current_nested_key[current_nested_key_size - 1] = String::from(key);
+        self.current_handler_mut().handle_map_key(key);
         Status::Continue
     }
 
     fn handle_start_array(&mut self, _ctx: &Context) -> Status {
-        // Push values to list stack
-        let current_path = self.current_list_path();
-        self.array_ids.insert(current_path, self.current_object_id);
-
-        let mut current_object: Object = Object::new();
-
-        let mut current_object_id: i32 = 0;
-        let mut current_nested_key: Vec<String> = Vec::new();
-
-        swap(&mut current_object, &mut self.current_object);
-        swap(&mut current_object_id, &mut self.current_object_id);
-        swap(&mut current_nested_key, &mut self.current_nested_key);
-
-        let new_obj = ListStackElement {
-            object: current_object,
-            object_id: current_object_id,
-            nested_key: current_nested_key,
-        };
-
-        self.list_stack.push(new_obj);
-
-        // Get last array id from memory
-        let list_path = self.current_list_path();
-        if self.array_ids.contains_key(&list_path) {
-            self.current_object_id = self.array_ids[&list_path];
-        }
-        // self.array_ids.contains_key();
-
-        // Reset current values
-
+        let current_path = &self.current_handler().path.clone();
+        self.handler_stack.go_down(current_path);
         Status::Continue
     }
 
     fn handle_end_array(&mut self, _ctx: &Context) -> Status {
-        // Update global offset
-        let current_path = self.current_list_path();
-        self.array_ids.insert(current_path, self.current_object_id);
-
-        // Pop list stack
-        let vals = self.list_stack.pop().unwrap();
-
-        self.current_object = vals.object; // Assign by move
-        self.current_object_id = vals.object_id; // Assign by copy
-        self.current_nested_key = vals.nested_key; // Assign by move
-
-        if self.at_list_or_document_root() {
-            self.publish_object()
-        }
+        self.handler_stack.go_up();
+        self.try_pop();
         Status::Continue
     }
 }

@@ -17,8 +17,10 @@
 
 use std::io::BufRead;
 
-use json::JsonValue;
 use json_tools::{Buffer, BufferType, Lexer, Token, TokenType};
+use serde_json;
+use serde_json::Number as JsonNumber;
+use serde_json::Value as JsonValue;
 
 pub use common::{Context, Enclosing, Handler, ParserStatus, Status};
 
@@ -123,7 +125,7 @@ impl<'a, H: Handler> Parser<'a, H> {
                          kind: TokenType::Null,
                          ..
                      }) => {
-                    let status = self.handler.handle_json_value(context, JsonValue::Null);
+                    let status = self.handler.handle_json_value(context, serde_json::Value::Null);
 
                     update_context_status_value(context);
 
@@ -135,12 +137,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                      }) => {
                     let status = match buf {
                         Buffer::MultiByte(b) => match std::str::from_utf8(&b) {
-                            Ok(s) => match s.parse::<i64>() {
+                            Ok(s) => match serde_json::from_str::<JsonNumber>(s) {
                                 Ok(num) => self.handler.handle_json_value(context, JsonValue::from(num)),
-                                Err(_) => match s.parse::<f64>() {
-                                    Ok(num) => self.handler.handle_json_value(context, JsonValue::from(num)),
-                                    Err(_) => panic!("Could not parse number as i64 or f64"),
-                                },
+                                Err(_) => { panic!("Could not parse json number") }
                             },
                             Err(e) => return Err(ParseError::MalformedJson(e.to_string())),
                         },
@@ -165,19 +164,7 @@ impl<'a, H: Handler> Parser<'a, H> {
                         Buffer::Span(_) => panic!("Unexpected span in string buffer"),
                     };
 
-                    // Un-parse string from raw bytes to json values
-                    let string = match json::parse(string) {
-                        Ok(s) => {
-                            s.to_string()
-                        }
-                        Err(_) => {
-                            panic!("Could not parse json string value")
-                        }
-                    };
-
-                    // let json_value_raw = json::parse(val);
-                    // let json_value_parsed = json_value_raw.unwrap();
-                    // let key_parsed = json_value_parsed.as_str().unwrap();
+                    let string = serde_json::from_str::<String>(string).unwrap();
 
                     if context.parser_status() == ParserStatus::ArrayNeedVal
                         || context.parser_status() == ParserStatus::ArrayStart

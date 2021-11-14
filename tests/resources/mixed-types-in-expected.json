@@ -64,7 +64,7 @@
             "id_mixed-types": 0
         },
         {
-            "empty": 1,
+            "empty": 1.0,
             "id_list_lin_mixed-types": 4,
             "id_mixed-types": 0
         },

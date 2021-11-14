@@ -1,18 +1,18 @@
 [package]
 name = "json-to-tables"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-json = "*"
+serde_json = { version = "*", features = ["arbitrary_precision"] }
 regex = "1.5"
 lazy_static = "*"
 structopt = "*"
-cached = "*"
 glob = "*"
 json-tools = "*"
+serde = "*"
 
 [dev-dependencies]
 rstest = "*"

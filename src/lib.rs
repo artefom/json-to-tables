@@ -1,7 +1,10 @@
-pub mod parser;
-pub mod consumer_json;
-pub mod consumer_files;
-pub mod yajlish;
+#![deny(rust_2018_idioms)]
 
-#[macro_use] extern crate cached;
-#[macro_use] extern crate lazy_static;
+#[macro_use]
+extern crate lazy_static;
+
+pub mod parser;
+pub mod parallel;
+pub mod read;
+pub mod yajlish;
+pub mod database;

@@ -1,15 +1,15 @@
 use std::collections::HashMap;
 
-use json::JsonValue;
-
-pub type JsonPath = Vec<String>;
+use serde_json::Value as JsonValue;
 
 /// Path in json file without nested tables
-pub type TJPath = Vec<JsonPath>;
+pub type JsonPath = Vec<String>;
 
-/// Short for Nested Table Json Path
-/// Path object that describes path in json that may contain nested lists
-/// Does not store positions in lists
-pub type NTJPath = Vec<TJPath>;
+pub type TableRecord = HashMap<JsonPath, JsonValue>;
 
-pub type TableRecord = HashMap<NTJPath, JsonValue>;
+#[derive(Debug)]
+pub struct TableLocation {
+    pub table_path: Vec<JsonPath>,
+    pub object_id: i32,
+    pub parent_object_id: i32,
+}
