@@ -1,77 +1,77 @@
 {
-    "genres_lin_books_lin_bookstore": [
-        {
-            "idid_genres_inin_books": "",
-            "subgenre": "High fantasy",
-            "name": "Fantasy",
-            "id_genres_lin_books_lin_bookstore": 0,
-            "id_books_lin_bookstore": 0
-        },
-        {
-            "name": "Adventure",
-            "id_genres_lin_books_lin_bookstore": 1,
-            "id_books_lin_bookstore": 0
-        },
-        {
-            "name": "Quest",
-            "id_genres_lin_books_lin_bookstore": 2,
-            "id_books_lin_bookstore": 1
-        },
-        {
-            "name": "Adventure",
-            "id_genres_lin_books_lin_bookstore": 3,
-            "id_books_lin_bookstore": 1
-        },
-        {
-            "name": "Fantasy",
-            "id_genres_lin_books_lin_bookstore": 4,
-            "id_books_lin_bookstore": 1
-        }
-    ],
     "authors_lin_books_lin_bookstore": [
         {
-            "list": "John Ronald Reuel Tolkien",
             "id_authors_lin_books_lin_bookstore": 0,
-            "id_books_lin_bookstore": 0
+            "id_books_lin_bookstore": 0,
+            "list": "John Ronald Reuel Tolkien"
         },
         {
-            "list": "Paulo Coelho",
             "id_authors_lin_books_lin_bookstore": 1,
-            "id_books_lin_bookstore": 1
+            "id_books_lin_bookstore": 1,
+            "list": "Paulo Coelho"
         }
     ],
     "books_lin_bookstore": [
         {
-            "idid_books": 1,
-            "title": "The Lord of the Rings",
-            "rating": 4.8,
             "amount_in_price": 13.57,
             "currency_in_price": "USD",
-            "used_in_inventory": 10,
-            "new_in_inventory": 20,
-            "publisher": "Mariner Books",
-            "publicationDate": "August 14, 2012",
             "id_books_lin_bookstore": 0,
-            "id_bookstore": 0
+            "id_bookstore": 0,
+            "idid_books": 1,
+            "new_in_inventory": 20,
+            "publicationDate": "August 14, 2012",
+            "publisher": "Mariner Books",
+            "rating": 4.8,
+            "title": "The Lord of the Rings",
+            "used_in_inventory": 10
         },
         {
-            "bookId": 2,
-            "title": "The \"Alchemist\" 1\\2",
-            "rating": 4.6,
             "amount_in_price": 10.13,
+            "bookId": 2,
             "currency_in_price": "USD",
-            "used_in_inventory": 1,
-            "new_in_inventory": 35,
-            "publisher": "HarperOne",
-            "publicationDate": "April 15, 2014",
             "id_books_lin_bookstore": 1,
-            "id_bookstore": 0
+            "id_bookstore": 0,
+            "new_in_inventory": 35,
+            "publicationDate": "April 15, 2014",
+            "publisher": "HarperOne",
+            "rating": 4.6,
+            "title": "The \"Alchemist\" 1\\2",
+            "used_in_inventory": 1
         }
     ],
     "bookstore": [
         {
-            "storeTitle": "Закладки и марки",
-            "id_bookstore": 0
+            "id_bookstore": 0,
+            "storeTitle": "Закладки и марки"
+        }
+    ],
+    "genres_lin_books_lin_bookstore": [
+        {
+            "id_books_lin_bookstore": 0,
+            "id_genres_lin_books_lin_bookstore": 0,
+            "idid_genres_inin_books": "",
+            "name": "Fantasy",
+            "subgenre": "High fantasy"
+        },
+        {
+            "id_books_lin_bookstore": 0,
+            "id_genres_lin_books_lin_bookstore": 1,
+            "name": "Adventure"
+        },
+        {
+            "id_books_lin_bookstore": 1,
+            "id_genres_lin_books_lin_bookstore": 2,
+            "name": "Quest"
+        },
+        {
+            "id_books_lin_bookstore": 1,
+            "id_genres_lin_books_lin_bookstore": 3,
+            "name": "Adventure"
+        },
+        {
+            "id_books_lin_bookstore": 1,
+            "id_genres_lin_books_lin_bookstore": 4,
+            "name": "Fantasy"
         }
     ]
 }

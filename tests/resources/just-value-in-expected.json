@@ -1,8 +1,8 @@
 {
     "just-value": [
         {
-            "list": "Hello",
-            "id_just-value": 0
+            "id_just-value": 0,
+            "list": "Hello"
         }
     ]
 }

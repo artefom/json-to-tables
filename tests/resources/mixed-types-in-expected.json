@@ -1,4 +1,49 @@
 {
+    "empty_lin_list_lin_mixed-types": [
+        {
+            "empty": 1,
+            "id_empty_lin_list_lin_mixed-types": 0,
+            "id_list_lin_mixed-types": 6
+        },
+        {
+            "id_empty_lin_list_lin_mixed-types": 1,
+            "id_list_lin_mixed-types": 6,
+            "listlist": "Im special keyword"
+        },
+        {
+            "id_empty_lin_list_lin_mixed-types": 2,
+            "id_list_lin_mixed-types": 6,
+            "listlist": "Im special keyword",
+            "not_list": "Im another value"
+        },
+        {
+            "empty": "Im another value in empty key",
+            "id_empty_lin_list_lin_mixed-types": 3,
+            "id_list_lin_mixed-types": 6,
+            "listlist": "Im special keyword"
+        },
+        {
+            "id_empty_lin_list_lin_mixed-types": 4,
+            "id_list_lin_mixed-types": 6,
+            "listlist": "Im special keyword",
+            "not_list": "Im another value"
+        },
+        {
+            "id_empty_lin_list_lin_mixed-types": 5,
+            "id_list_lin_mixed-types": 7,
+            "list": 1
+        },
+        {
+            "id_empty_lin_list_lin_mixed-types": 6,
+            "id_list_lin_mixed-types": 7,
+            "list": 2
+        },
+        {
+            "id_empty_lin_list_lin_mixed-types": 7,
+            "id_list_lin_mixed-types": 7,
+            "list": 3
+        }
+    ],
     "list_lin_mixed-types": [
         {
             "empty": 1,
@@ -35,51 +80,6 @@
         {
             "id_list_lin_mixed-types": 7,
             "id_mixed-types": 0
-        }
-    ],
-    "empty_lin_list_lin_mixed-types": [
-        {
-            "empty": 1,
-            "id_empty_lin_list_lin_mixed-types": 0,
-            "id_list_lin_mixed-types": 6
-        },
-        {
-            "listlist": "Im special keyword",
-            "id_empty_lin_list_lin_mixed-types": 1,
-            "id_list_lin_mixed-types": 6
-        },
-        {
-            "listlist": "Im special keyword",
-            "not_list": "Im another value",
-            "id_empty_lin_list_lin_mixed-types": 2,
-            "id_list_lin_mixed-types": 6
-        },
-        {
-            "listlist": "Im special keyword",
-            "empty": "Im another value in empty key",
-            "id_empty_lin_list_lin_mixed-types": 3,
-            "id_list_lin_mixed-types": 6
-        },
-        {
-            "listlist": "Im special keyword",
-            "not_list": "Im another value",
-            "id_empty_lin_list_lin_mixed-types": 4,
-            "id_list_lin_mixed-types": 6
-        },
-        {
-            "list": 1,
-            "id_empty_lin_list_lin_mixed-types": 5,
-            "id_list_lin_mixed-types": 7
-        },
-        {
-            "list": 2,
-            "id_empty_lin_list_lin_mixed-types": 6,
-            "id_list_lin_mixed-types": 7
-        },
-        {
-            "list": 3,
-            "id_empty_lin_list_lin_mixed-types": 7,
-            "id_list_lin_mixed-types": 7
         }
     ],
     "mixed-types": [

@@ -1,43 +1,14 @@
 {
-    "list_lin_list_lin_pyramids": [
-        {
-            "list": 1,
-            "id_list_lin_list_lin_pyramids": 0,
-            "id_list_lin_pyramids": 0
-        },
-        {
-            "id_list_lin_list_lin_pyramids": 1,
-            "id_list_lin_pyramids": 1
-        },
-        {
-            "id_list_lin_list_lin_pyramids": 2,
-            "id_list_lin_pyramids": 2
-        }
-    ],
-    "list_lin_pyramids": [
-        {
-            "id_list_lin_pyramids": 0,
-            "id_pyramids": 0
-        },
-        {
-            "id_list_lin_pyramids": 1,
-            "id_pyramids": 0
-        },
-        {
-            "id_list_lin_pyramids": 2,
-            "id_pyramids": 0
-        }
-    ],
     "list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": [
         {
-            "list": 1,
             "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 0,
-            "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 0
+            "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 0,
+            "list": 1
         },
         {
-            "list": 1,
             "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 1,
-            "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 1
+            "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 1,
+            "list": 1
         }
     ],
     "list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": [
@@ -50,9 +21,9 @@
             "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 1
         },
         {
-            "list": 1,
             "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 2,
-            "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 2
+            "id_list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": 2,
+            "list": 1
         }
     ],
     "list_lin_list_lin_list_lin_list_lin_list_lin_list_lin_pyramids": [
@@ -89,9 +60,9 @@
             "id_list_lin_list_lin_list_lin_pyramids": 0
         },
         {
-            "list": 1,
             "id_list_lin_list_lin_list_lin_list_lin_pyramids": 1,
-            "id_list_lin_list_lin_list_lin_pyramids": 1
+            "id_list_lin_list_lin_list_lin_pyramids": 1,
+            "list": 1
         },
         {
             "id_list_lin_list_lin_list_lin_list_lin_pyramids": 2,
@@ -114,6 +85,35 @@
         {
             "id_list_lin_list_lin_list_lin_pyramids": 2,
             "id_list_lin_list_lin_pyramids": 2
+        }
+    ],
+    "list_lin_list_lin_pyramids": [
+        {
+            "id_list_lin_list_lin_pyramids": 0,
+            "id_list_lin_pyramids": 0,
+            "list": 1
+        },
+        {
+            "id_list_lin_list_lin_pyramids": 1,
+            "id_list_lin_pyramids": 1
+        },
+        {
+            "id_list_lin_list_lin_pyramids": 2,
+            "id_list_lin_pyramids": 2
+        }
+    ],
+    "list_lin_pyramids": [
+        {
+            "id_list_lin_pyramids": 0,
+            "id_pyramids": 0
+        },
+        {
+            "id_list_lin_pyramids": 1,
+            "id_pyramids": 0
+        },
+        {
+            "id_list_lin_pyramids": 2,
+            "id_pyramids": 0
         }
     ],
     "pyramids": [

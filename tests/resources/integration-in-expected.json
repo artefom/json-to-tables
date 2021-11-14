@@ -1,33 +1,33 @@
 {
     "included_lin_integration": [
         {
-            "id": "TECHNICAL-CANCELLATION-NEXP",
-            "type": "technical_cancellation",
             "allowed_in_attributes": false,
-            "method_type_in_attributes": "",
             "email_in_attributes": "dummy@email.com",
-            "minutes_in_attributes": 0,
+            "id": "TECHNICAL-CANCELLATION-NEXP",
             "id_included_lin_integration": 0,
-            "id_integration": 0
+            "id_integration": 0,
+            "method_type_in_attributes": "",
+            "minutes_in_attributes": 0,
+            "type": "technical_cancellation"
         }
     ],
     "integration": [
         {
-            "idid_in_data": "NEXP",
-            "type_in_data": "marketing_carrier",
+            "activation_date_in_attributes_in_data": "2016-02-01",
+            "airport_connection_in_attributes_in_data": false,
+            "carrier_type_in_attributes_in_data": "marketing_carrier",
+            "comment_in_attributes_in_data": "",
             "expected_go_live_in_attributes_in_data": "",
+            "id_integration": 0,
+            "idid_in_data": "NEXP",
+            "idid_in_data_in_technical_cancellation_in_relationships_in_data": "TECHNICAL-CANCELLATION-NEXP",
+            "ready_date_in_attributes_in_data": "2015-05-01",
+            "sell_ban_hours_before_in_attributes_in_data": null,
             "status_in_attributes_in_data": "active",
             "supports_live_connection_data_in_attributes_in_data": true,
-            "sell_ban_hours_before_in_attributes_in_data": null,
-            "carrier_type_in_attributes_in_data": "marketing_carrier",
-            "airport_connection_in_attributes_in_data": false,
-            "comment_in_attributes_in_data": "",
-            "activation_date_in_attributes_in_data": "2016-02-01",
-            "ready_date_in_attributes_in_data": "2015-05-01",
+            "type_in_data": "marketing_carrier",
             "type_in_data_in_technical_cancellation_in_relationships_in_data": "technical_cancellation",
-            "idid_in_data_in_technical_cancellation_in_relationships_in_data": "TECHNICAL-CANCELLATION-NEXP",
-            "version_in_jsonapi": "1.0",
-            "id_integration": 0
+            "version_in_jsonapi": "1.0"
         }
     ]
 }
