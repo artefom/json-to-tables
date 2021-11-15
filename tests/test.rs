@@ -14,8 +14,8 @@ use json_to_tables::read;
 /// Convert input stream to tables in json format
 pub fn read_to_json<B: BufRead>(root_name: String, input: B) -> JsonValue {
     let mut result: JsonValue = JsonValue::Object(Map::new());
-    read::read_to_database(DatabaseJson::new(root_name, &mut result),
-                           input);
+    read::read_to_db(DatabaseJson::new(root_name, &mut result),
+                     input);
     result
 }
 

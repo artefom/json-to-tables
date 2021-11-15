@@ -12,7 +12,7 @@ lazy_static = "*"
 structopt = "*"
 glob = "*"
 json-tools = "*"
-serde = "*"
+serde = { version = "*", features = ["derive"] }
 
 [dev-dependencies]
 rstest = "*"
