@@ -36,7 +36,6 @@ fn escape_nested_key_element(s: &String) -> String {
     return s.clone();
 }
 
-
 fn json_path_to_str(nested_key: &JsonPath) -> String {
     let key;
     if nested_key.len() == 0 {
@@ -44,7 +43,10 @@ fn json_path_to_str(nested_key: &JsonPath) -> String {
     } else {
         let mut nested_key_rev = nested_key.clone();
         nested_key_rev.reverse();
-        let nested_keys_escaped = nested_key_rev.iter().map(escape_nested_key_element).collect::<Vec<String>>();
+        let nested_keys_escaped = nested_key_rev
+            .iter()
+            .map(escape_nested_key_element)
+            .collect::<Vec<String>>();
         key = nested_keys_escaped.join("_in_");
     }
     escape_id_prefix(&key)
@@ -63,13 +65,18 @@ fn table_path_to_str(root_name: &String, nested_key: &Vec<JsonPath>) -> String {
     table_path.reverse();
     table_path.push(vec![root_name.clone()]);
 
-
     if table_path.len() == 0 {
         return String::from("");
     } else {
-        let converted_path = table_path.iter().map(|p| json_path_to_str(p)).collect::<Vec<String>>();
+        let converted_path = table_path
+            .iter()
+            .map(|p| json_path_to_str(p))
+            .collect::<Vec<String>>();
         let nested_key_rev = converted_path.clone();
-        let nested_keys_escaped = nested_key_rev.iter().map(escape_table_path_element).collect::<Vec<String>>();
+        let nested_keys_escaped = nested_key_rev
+            .iter()
+            .map(escape_table_path_element)
+            .collect::<Vec<String>>();
         return nested_keys_escaped.join("_lin_");
     }
 }
@@ -80,15 +87,16 @@ fn record_to_json(root_name: &String, loc: &TableLocation, rec: &TableRecord) ->
 
     // Insert values
     for (path, val) in rec.iter() {
-        obj.insert(json_path_to_str(path),
-                   val.clone());
+        obj.insert(json_path_to_str(path), val.clone());
     }
 
     // Insert object ids
     let table_name = table_path_to_str(root_name, &loc.table_path);
     {
-        obj.insert(String::from("id_") + table_name.as_str(),
-                   serde_json::Value::from(loc.object_id));
+        obj.insert(
+            String::from("id_") + table_name.as_str(),
+            serde_json::Value::from(loc.object_id),
+        );
     }
 
     // Insert foreign
@@ -96,8 +104,10 @@ fn record_to_json(root_name: &String, loc: &TableLocation, rec: &TableRecord) ->
     parent_path.pop();
     let parent_table = table_path_to_str(root_name, &parent_path);
     {
-        obj.insert(String::from("id_") + parent_table.as_str(),
-                   serde_json::Value::from(loc.parent_object_id));
+        obj.insert(
+            String::from("id_") + parent_table.as_str(),
+            serde_json::Value::from(loc.parent_object_id),
+        );
     }
 
     return_val
@@ -110,10 +120,7 @@ pub struct DatabaseJson<'a> {
 
 impl<'a> DatabaseJson<'a> {
     pub fn new(root_name: String, target: &'a mut JsonValue) -> DatabaseJson<'a> {
-        DatabaseJson {
-            root_name,
-            target,
-        }
+        DatabaseJson { root_name, target }
     }
 }
 
@@ -126,8 +133,10 @@ impl<'a> Database for DatabaseJson<'a> {
             obj.insert(table_name.clone(), serde_json::Value::Array(Vec::new()));
         }
 
-        obj[&table_name].as_array_mut().unwrap().push(record_to_json(
-            &self.root_name, &table, &record));
+        obj[&table_name]
+            .as_array_mut()
+            .unwrap()
+            .push(record_to_json(&self.root_name, &table, &record));
     }
 
     fn flush(&mut self) {}

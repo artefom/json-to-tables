@@ -33,7 +33,9 @@ impl ObjectHandler {
     /// Optionally produces a record if it's creation is finished
     fn pop(&mut self) -> Option<(i32, TableRecord)> {
         // Do not produce elements if we are in the process of building object
-        if self.path.len() != 0 { return None; }
+        if self.path.len() != 0 {
+            return None;
+        }
 
         let mut new_rec = TableRecord::new();
         swap(&mut self.rec, &mut new_rec);
@@ -111,12 +113,8 @@ impl ObjectHandlerHashTree {
 
     pub fn parent(&self) -> Option<&ObjectHandler> {
         match self.parent_tup() {
-            Some(t) => {
-                Some(&t.0)
-            }
-            None => {
-                None
-            }
+            Some(t) => Some(&t.0),
+            None => None,
         }
     }
 
@@ -143,7 +141,8 @@ impl ObjectHandlerHashTree {
                 self.current_tup_mut().2.insert(path.clone(), new_id);
 
                 // Create and insert new object, set current id to new object
-                self.arena.push((ObjectHandler::new(), self.current_id, HashMap::new()));
+                self.arena
+                    .push((ObjectHandler::new(), self.current_id, HashMap::new()));
                 self.current_id = new_id;
             }
         };
@@ -163,7 +162,6 @@ impl<'a> Debug for NestedObjectHandler<'a> {
         write!(f, "NestedObjectHandler")
     }
 }
-
 
 impl<'a> NestedObjectHandler<'a> {
     pub fn new(consumer: &'a mut dyn FnMut(TableLocation, TableRecord)) -> NestedObjectHandler<'a> {
@@ -192,10 +190,8 @@ impl<'a> NestedObjectHandler<'a> {
                     table_path: self.handler_stack.full_path().clone(),
                     object_id: rec_id,
                     parent_object_id: match self.parent_handler() {
-                        Some(p) => {
-                            p.object_id
-                        }
-                        None => { 0 }
+                        Some(p) => p.object_id,
+                        None => 0,
                     },
                 };
                 (self.consumer)(table_location, rec);
@@ -204,7 +200,6 @@ impl<'a> NestedObjectHandler<'a> {
         }
     }
 }
-
 
 impl<'a> Handler for NestedObjectHandler<'a> {
     fn handle_json_value(&mut self, _ctx: &Context, val: JsonValue) -> Status {

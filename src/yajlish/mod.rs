@@ -57,9 +57,9 @@ impl<'a, H: Handler> Parser<'a, H> {
         ) {
             let status = match lexer.next() {
                 Some(Token {
-                         kind: TokenType::BracketClose,
-                         ..
-                     }) => {
+                    kind: TokenType::BracketClose,
+                    ..
+                }) => {
                     let status = self.handler.handle_end_array(context);
                     if context.last_enclosing() == Some(Enclosing::LeftBracket) {
                         context.remove_last_enclosing();
@@ -78,9 +78,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::CurlyClose,
-                         ..
-                     }) => {
+                    kind: TokenType::CurlyClose,
+                    ..
+                }) => {
                     let status = self.handler.handle_end_map(context);
 
                     if context.last_enclosing() == Some(Enclosing::LeftBrace) {
@@ -101,9 +101,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::BracketOpen,
-                         ..
-                     }) => {
+                    kind: TokenType::BracketOpen,
+                    ..
+                }) => {
                     let status = self.handler.handle_start_array(context);
                     context.add_enclosing(Enclosing::LeftBracket);
                     context.inc_brackets();
@@ -111,9 +111,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::CurlyOpen,
-                         ..
-                     }) => {
+                    kind: TokenType::CurlyOpen,
+                    ..
+                }) => {
                     let status = self.handler.handle_start_map(context);
                     context.add_enclosing(Enclosing::LeftBrace);
                     context.inc_braces();
@@ -122,24 +122,30 @@ impl<'a, H: Handler> Parser<'a, H> {
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::Null,
-                         ..
-                     }) => {
-                    let status = self.handler.handle_json_value(context, serde_json::Value::Null);
+                    kind: TokenType::Null,
+                    ..
+                }) => {
+                    let status = self
+                        .handler
+                        .handle_json_value(context, serde_json::Value::Null);
 
                     update_context_status_value(context);
 
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::Number,
-                         buf,
-                     }) => {
+                    kind: TokenType::Number,
+                    buf,
+                }) => {
                     let status = match buf {
                         Buffer::MultiByte(b) => match std::str::from_utf8(&b) {
                             Ok(s) => match serde_json::from_str::<JsonNumber>(s) {
-                                Ok(num) => self.handler.handle_json_value(context, JsonValue::from(num)),
-                                Err(_) => { panic!("Could not parse json number") }
+                                Ok(num) => self
+                                    .handler
+                                    .handle_json_value(context, JsonValue::from(num)),
+                                Err(_) => {
+                                    panic!("Could not parse json number")
+                                }
                             },
                             Err(e) => return Err(ParseError::MalformedJson(e.to_string())),
                         },
@@ -151,10 +157,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::String,
-                         buf,
-                     }) => {
-
+                    kind: TokenType::String,
+                    buf,
+                }) => {
                     // Read raw bytes to string
                     let string = match buf {
                         Buffer::MultiByte(ref b) => match std::str::from_utf8(b) {
@@ -169,15 +174,21 @@ impl<'a, H: Handler> Parser<'a, H> {
                     if context.parser_status() == ParserStatus::ArrayNeedVal
                         || context.parser_status() == ParserStatus::ArrayStart
                     {
-                        let status = self.handler.handle_json_value(context, JsonValue::from(string));
+                        let status = self
+                            .handler
+                            .handle_json_value(context, JsonValue::from(string));
                         context.update_status(ParserStatus::ArrayGotVal);
                         Some(status)
                     } else if context.parser_status() == ParserStatus::MapNeedVal {
-                        let status = self.handler.handle_json_value(context, JsonValue::from(string));
+                        let status = self
+                            .handler
+                            .handle_json_value(context, JsonValue::from(string));
                         context.update_status(ParserStatus::MapGotVal);
                         Some(status)
                     } else if context.parser_status() == ParserStatus::Start {
-                        let status = self.handler.handle_json_value(context, JsonValue::from(string));
+                        let status = self
+                            .handler
+                            .handle_json_value(context, JsonValue::from(string));
                         context.update_status(ParserStatus::GotValue);
                         Some(status)
                     } else if context.parser_status() == ParserStatus::MapNeedKey
@@ -192,29 +203,33 @@ impl<'a, H: Handler> Parser<'a, H> {
                     }
                 }
                 Some(Token {
-                         kind: TokenType::BooleanTrue,
-                         ..
-                     }) => {
-                    let status = self.handler.handle_json_value(context, JsonValue::from(true));
+                    kind: TokenType::BooleanTrue,
+                    ..
+                }) => {
+                    let status = self
+                        .handler
+                        .handle_json_value(context, JsonValue::from(true));
 
                     update_context_status_value(context);
 
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::BooleanFalse,
-                         ..
-                     }) => {
-                    let status = self.handler.handle_json_value(context, JsonValue::from(false));
+                    kind: TokenType::BooleanFalse,
+                    ..
+                }) => {
+                    let status = self
+                        .handler
+                        .handle_json_value(context, JsonValue::from(false));
 
                     update_context_status_value(context);
 
                     Some(status)
                 }
                 Some(Token {
-                         kind: TokenType::Comma,
-                         ..
-                     }) => {
+                    kind: TokenType::Comma,
+                    ..
+                }) => {
                     if context.parser_status() == ParserStatus::MapGotVal {
                         context.update_status(ParserStatus::MapNeedKey);
                     } else if context.parser_status() == ParserStatus::ArrayGotVal {
@@ -226,9 +241,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                     None
                 }
                 Some(Token {
-                         kind: TokenType::Colon,
-                         ..
-                     }) => {
+                    kind: TokenType::Colon,
+                    ..
+                }) => {
                     if context.parser_status() == ParserStatus::MapSep {
                         context.update_status(ParserStatus::MapNeedVal);
                     }
@@ -236,9 +251,9 @@ impl<'a, H: Handler> Parser<'a, H> {
                     None
                 }
                 Some(Token {
-                         kind: TokenType::Invalid,
-                         buf,
-                     }) => {
+                    kind: TokenType::Invalid,
+                    buf,
+                }) => {
                     return Err(ParseError::MalformedJson(format!("{:?}", buf)));
                 }
                 None => {

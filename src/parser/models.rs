@@ -13,3 +13,11 @@ pub struct TableLocation {
     pub object_id: i32,
     pub parent_object_id: i32,
 }
+
+impl TableLocation {
+    pub fn parent_table_path(&self) -> Vec<JsonPath> {
+        let mut rv = self.table_path.clone();
+        rv.pop();
+        rv
+    }
+}

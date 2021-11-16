@@ -14,11 +14,9 @@ use json_to_tables::read;
 /// Convert input stream to tables in json format
 pub fn read_to_json<B: BufRead>(root_name: String, input: B) -> JsonValue {
     let mut result: JsonValue = JsonValue::Object(Map::new());
-    read::read_to_db(DatabaseJson::new(root_name, &mut result),
-                     input);
+    read::read_to_db(DatabaseJson::new(root_name, &mut result), input);
     result
 }
-
 
 fn test_case_path(test_case: &String, expected: bool) -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -77,8 +75,7 @@ fn test_json_to_tables(#[case] test_case: String) {
     let mut reader = read_test_case(&test_case, true);
     reader.read_to_string(&mut expected).unwrap();
 
-    let actual = read_to_json(test_case.clone(),
-                              &mut read_test_case(&test_case, false));
+    let actual = read_to_json(test_case.clone(), &mut read_test_case(&test_case, false));
 
     if env!("REWRITE_EXPECTED") == "1" {
         write_actual(&test_case, &actual);

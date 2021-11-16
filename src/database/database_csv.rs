@@ -4,7 +4,7 @@ use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{to_string, Value};
 
 use crate::parser::{JsonPath, TableLocation, TableRecord};
 
@@ -19,7 +19,9 @@ pub fn csv_field_quote(s: &String) -> String {
 /// making it valid csv record
 pub fn csv_field_escape(s: &String) -> String {
     // Early return for empty strings
-    if s.len() == 0 { return String::from("\"\""); }
+    if s.len() == 0 {
+        return String::from("\"\"");
+    }
 
     if s.contains('\"') || s.contains(',') || s.contains('\n') {
         csv_field_quote(s)
@@ -29,11 +31,23 @@ pub fn csv_field_escape(s: &String) -> String {
 }
 
 #[derive(Serialize)]
+pub struct SourceColumn {
+    source_path: JsonPath,
+}
+
+#[derive(Serialize)]
+pub enum SchemaColumn {
+    SourceColumn(SourceColumn),
+    PrimaryKey,
+    ForeignKey,
+}
+
+#[derive(Serialize)]
 pub struct Schema {
     #[serde(skip_serializing)]
     seen_cols: HashSet<JsonPath>,
     // Ordered mapping of json paths to string
-    columns: Vec<JsonPath>,
+    columns: Vec<SchemaColumn>,
 }
 
 impl Schema {
@@ -44,32 +58,49 @@ impl Schema {
         }
     }
 
+    pub fn add_column(&mut self, col: SchemaColumn) {
+        self.columns.push(col);
+    }
+
     fn add_all_columns(&mut self, rec: &TableRecord) {
         for k in rec.keys() {
             if !self.seen_cols.contains(k) {
                 self.seen_cols.insert(k.clone());
-                self.columns.push(k.clone());
+                self.add_column(SchemaColumn::SourceColumn(SourceColumn {
+                    source_path: k.clone(),
+                }));
             }
         }
     }
 
     fn value_to_str(v: &serde_json::Value) -> Option<String> {
         match v {
-            Value::Null => { None }
-            Value::Bool(v) => { Some(v.to_string()) }
-            Value::Number(v) => { Some(v.to_string()) }
-            Value::String(v) => { Some(csv_field_escape(v)) }
-            Value::Array(_) => { panic!("Arrays are not allowed in record") }
-            Value::Object(_) => { panic!("Objects are not allowed in record") }
+            Value::Null => None,
+            Value::Bool(v) => Some(v.to_string()),
+            Value::Number(v) => Some(v.to_string()),
+            Value::String(v) => Some(csv_field_escape(v)),
+            Value::Array(_) => {
+                panic!("Arrays are not allowed in record")
+            }
+            Value::Object(_) => {
+                panic!("Objects are not allowed in record")
+            }
         }
     }
 
-    pub fn make_columns(&mut self, rec: TableRecord) -> Vec<Option<String>> {
+    pub fn make_columns(&mut self, loc: TableLocation, rec: TableRecord) -> Vec<Option<String>> {
         self.add_all_columns(&rec);
-        self.columns.iter().map(|col| match rec.get(col) {
-            Some(t) => { Schema::value_to_str(t) }
-            None => None
-        }).collect::<Vec<_>>()
+        self.columns
+            .iter()
+            .map(|col| match col {
+                SchemaColumn::SourceColumn(col) => match rec.get(&col.source_path) {
+                    Some(t) => Schema::value_to_str(t),
+                    None => None,
+                },
+                SchemaColumn::PrimaryKey => Some(loc.object_id.to_string()),
+                SchemaColumn::ForeignKey => Some(loc.parent_object_id.to_string()),
+            })
+            .collect::<Vec<_>>()
     }
 }
 
@@ -79,31 +110,36 @@ pub struct TableCsv {
     schema_writer: BufWriter<File>,
 }
 
-
 impl TableCsv {
     pub fn new(file: File, schema_file: File) -> TableCsv {
+        let mut schema = Schema::new();
+        schema.add_column(SchemaColumn::PrimaryKey);
+        schema.add_column(SchemaColumn::ForeignKey);
         TableCsv {
             writer: BufWriter::new(file),
-            schema: Schema::new(),
+            schema: schema,
             schema_writer: BufWriter::new(schema_file),
         }
     }
 
-    pub fn write(&mut self, rec: TableRecord) {
+    pub fn write(&mut self, loc: TableLocation, rec: TableRecord) {
         // Convert record to set of strings
-        let vals = self.schema.make_columns(rec);
+        let vals = self.schema.make_columns(loc, rec);
 
         // Create buffered string for writing to file
-        let line = vals.iter().map(|v| match v {
-            Some(v) => {
-                // Escape separator and quotes
-                v.clone()
-            }
-            None => String::from("")
-        }).collect::<Vec<_>>().join(",");
+        let line = vals
+            .iter()
+            .map(|v| match v {
+                Some(v) => {
+                    // Escape separator and quotes
+                    v.clone()
+                }
+                None => String::from(""),
+            })
+            .collect::<Vec<_>>()
+            .join(",");
 
         let buf = line.as_bytes();
-
 
         // Write new line to csv file from fields
         self.writer.write(buf).unwrap();
@@ -128,7 +164,8 @@ fn table_location_to_filename(root_name: &String, table_path: &Vec<JsonPath>) ->
         json_loc.join(".")
     }
 
-    table_path.iter()
+    table_path
+        .iter()
         .map(|name| json_path_to_str(name))
         .fold(root_name.clone(), |prev, next| prev + "-" + &next)
 }
@@ -157,7 +194,8 @@ impl DatabaseCsv {
             let data_file = File::create(data_path.as_path()).unwrap();
             let schema_file = File::create(schema_path.as_path()).unwrap();
 
-            self.tables.insert(table_path.clone(), TableCsv::new(data_file, schema_file));
+            self.tables
+                .insert(table_path.clone(), TableCsv::new(data_file, schema_file));
         }
         self.tables.get_mut(table_path).unwrap()
     }
@@ -166,7 +204,7 @@ impl DatabaseCsv {
 impl Database for DatabaseCsv {
     fn write(&mut self, loc: TableLocation, record: TableRecord) {
         let table = self.get_or_create_table_mut(&loc.table_path);
-        table.write(record);
+        table.write(loc, record);
     }
 
     fn flush(&mut self) {

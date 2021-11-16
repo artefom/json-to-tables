@@ -14,9 +14,11 @@ use json_to_tables::read::read_to_db_many;
 // use json_to_tables::yajlish::Parser;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "Json-to-tables",
-about = "Converts arbitrary jsons to line-separated \
-json tables with foreign keys")]
+#[structopt(
+    name = "Json-to-tables",
+    about = "Converts arbitrary jsons to line-separated \
+json tables with foreign keys"
+)]
 struct Cli {
     /// Root name of converted database
     name: String,
@@ -30,8 +32,8 @@ struct Cli {
 
 fn _path_to_str(p: &PathBuf) -> String {
     match p.clone().into_os_string().into_string() {
-        Ok(s) => { s }
-        Err(_) => { String::from("Unknown path") }
+        Ok(s) => s,
+        Err(_) => String::from("Unknown path"),
     }
 }
 
@@ -72,4 +74,3 @@ fn main() {
 
     read_to_db_many(db, all_files, &mut callback_success);
 }
-

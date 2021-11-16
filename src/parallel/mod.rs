@@ -34,10 +34,10 @@ impl<D: Database> AsyncConsumer<D> {
             let itm = self.receiver.recv().unwrap();
 
             match itm {
-                Some((loc, rec)) => {
-                    self.database.write(loc, rec)
+                Some((loc, rec)) => self.database.write(loc, rec),
+                None => {
+                    break;
                 }
-                None => { break; }
             };
         }
     }
@@ -47,7 +47,9 @@ impl<D: Database> AsyncConsumer<D> {
 /// Returns immediately
 pub fn consume_to_queue<B: 'static + BufRead + Send>(sender: Sender<QueueItm>, mut read: B) {
     thread::spawn(move || {
-        let mut consumer = |loc: TableLocation, rec: TableRecord| { sender.send(Some((loc, rec))).unwrap(); };
+        let mut consumer = |loc: TableLocation, rec: TableRecord| {
+            sender.send(Some((loc, rec))).unwrap();
+        };
         let mut handler = NestedObjectHandler::new(&mut consumer);
         let mut parser = Parser::new(&mut handler);
         parser.parse(&mut read).unwrap();
