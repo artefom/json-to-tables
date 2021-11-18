@@ -6,7 +6,7 @@ use std::process::exit;
 use glob::glob;
 use structopt::StructOpt;
 
-use json_to_tables::database::DatabaseCsv;
+use json_to_tables::database::{Database, DatabaseCsv, DatabaseSchema};
 use json_to_tables::read::read_to_db_many;
 
 // use json_to_tables;
@@ -20,9 +20,6 @@ use json_to_tables::read::read_to_db_many;
 json tables with foreign keys"
 )]
 struct Cli {
-    /// Root name of converted database
-    name: String,
-
     /// Output directory path
     output: std::path::PathBuf,
 
@@ -37,15 +34,15 @@ fn _path_to_str(p: &PathBuf) -> String {
     }
 }
 
-fn open_files(files: Vec<String>) -> Vec<BufReader<File>> {
-    let mut all_files = Vec::<BufReader<File>>::new();
+fn open_files(files: Vec<String>) -> Vec<(PathBuf, BufReader<File>)> {
+    let mut all_files = Vec::<(PathBuf, BufReader<File>)>::new();
 
     for pattern in files.iter() {
         for entry in glob(pattern).expect("Failed to read glob pattern") {
             match entry {
                 Ok(path_buf) => {
                     let file = File::open(path_buf.clone().as_path()).unwrap();
-                    all_files.push(BufReader::new(file));
+                    all_files.push((path_buf, BufReader::new(file)));
                 }
                 Err(e) => {
                     println!("{:?}", e);
@@ -65,12 +62,21 @@ fn main() {
         println!("Must provide at least one file");
         exit(1)
     };
-    let db = DatabaseCsv::new(opt.name, opt.output);
+    let db_schema = DatabaseSchema::empty();
+
+    let mut db = DatabaseCsv::new(db_schema, opt.output);
     let all_files = open_files(opt.files);
 
-    fn callback_success() {
-        println!("Parsed some file");
+    fn callback_success(path: PathBuf, num_records: usize) {
+        println!(
+            "Parsed {} - {} records",
+            path.to_string_lossy(),
+            num_records
+        );
     }
 
-    read_to_db_many(db, all_files, &mut callback_success);
+    // Write data
+    read_to_db_many(&mut db, all_files, &mut callback_success);
+
+    db.close();
 }

@@ -1,11 +1,12 @@
-use std::collections::{HashMap, HashSet};
-use std::fs::File;
+use std::collections::HashMap;
+use std::fs::{create_dir, File};
 use std::io::{BufWriter, Write};
+use std::mem::swap;
 use std::path::PathBuf;
 
-use serde::Serialize;
-use serde_json::{to_string, Value};
+use serde_json::Value;
 
+use crate::database::{ColumnSchema, DatabaseSchema, TableSchema};
 use crate::parser::{JsonPath, TableLocation, TableRecord};
 
 use super::Database;
@@ -30,46 +31,16 @@ pub fn csv_field_escape(s: &String) -> String {
     }
 }
 
-#[derive(Serialize)]
-pub struct SourceColumn {
-    source_path: JsonPath,
+pub struct TableCsv {
+    writer: BufWriter<File>,
+    schema: Option<TableSchema>,
 }
 
-#[derive(Serialize)]
-pub enum SchemaColumn {
-    SourceColumn(SourceColumn),
-    PrimaryKey,
-    ForeignKey,
-}
-
-#[derive(Serialize)]
-pub struct Schema {
-    #[serde(skip_serializing)]
-    seen_cols: HashSet<JsonPath>,
-    // Ordered mapping of json paths to string
-    columns: Vec<SchemaColumn>,
-}
-
-impl Schema {
-    pub fn new() -> Schema {
-        Schema {
-            seen_cols: HashSet::new(),
-            columns: Vec::new(),
-        }
-    }
-
-    pub fn add_column(&mut self, col: SchemaColumn) {
-        self.columns.push(col);
-    }
-
-    fn add_all_columns(&mut self, rec: &TableRecord) {
-        for k in rec.keys() {
-            if !self.seen_cols.contains(k) {
-                self.seen_cols.insert(k.clone());
-                self.add_column(SchemaColumn::SourceColumn(SourceColumn {
-                    source_path: k.clone(),
-                }));
-            }
+impl TableCsv {
+    pub fn new(schema: TableSchema, file: File) -> TableCsv {
+        TableCsv {
+            writer: BufWriter::new(file),
+            schema: Some(schema),
         }
     }
 
@@ -89,42 +60,25 @@ impl Schema {
     }
 
     pub fn make_columns(&mut self, loc: TableLocation, rec: TableRecord) -> Vec<Option<String>> {
-        self.add_all_columns(&rec);
-        self.columns
+        let schema = self.schema.as_mut().unwrap();
+        schema.update(&rec);
+        schema
+            .columns
             .iter()
             .map(|col| match col {
-                SchemaColumn::SourceColumn(col) => match rec.get(&col.source_path) {
-                    Some(t) => Schema::value_to_str(t),
+                ColumnSchema::SourceColumn(col) => match rec.get(&col.source_path) {
+                    Some(t) => TableCsv::value_to_str(t),
                     None => None,
                 },
-                SchemaColumn::PrimaryKey => Some(loc.object_id.to_string()),
-                SchemaColumn::ForeignKey => Some(loc.parent_object_id.to_string()),
+                ColumnSchema::PrimaryKey => Some(loc.object_id.to_string()),
+                ColumnSchema::ForeignKey => Some(loc.parent_object_id.to_string()),
             })
             .collect::<Vec<_>>()
-    }
-}
-
-pub struct TableCsv {
-    writer: BufWriter<File>,
-    schema: Schema,
-    schema_writer: BufWriter<File>,
-}
-
-impl TableCsv {
-    pub fn new(file: File, schema_file: File) -> TableCsv {
-        let mut schema = Schema::new();
-        schema.add_column(SchemaColumn::PrimaryKey);
-        schema.add_column(SchemaColumn::ForeignKey);
-        TableCsv {
-            writer: BufWriter::new(file),
-            schema: schema,
-            schema_writer: BufWriter::new(schema_file),
-        }
     }
 
     pub fn write(&mut self, loc: TableLocation, rec: TableRecord) {
         // Convert record to set of strings
-        let vals = self.schema.make_columns(loc, rec);
+        let vals = self.make_columns(loc, rec);
 
         // Create buffered string for writing to file
         let line = vals
@@ -146,70 +100,98 @@ impl TableCsv {
         self.writer.write(b"\n").unwrap();
     }
 
-    pub fn flush(&mut self) {
+    pub fn close(&mut self) {
         self.writer.flush().unwrap();
-        serde_json::to_writer_pretty(&mut self.schema_writer, &self.schema).unwrap();
-        self.schema_writer.flush().unwrap();
+    }
+
+    pub fn pop_schema(&mut self) -> Option<TableSchema> {
+        let mut schema: Option<TableSchema> = None;
+        swap(&mut self.schema, &mut schema);
+        schema
     }
 }
 
 pub struct DatabaseCsv {
-    name: String,
+    schema: DatabaseSchema,
     path: PathBuf,
     tables: HashMap<Vec<JsonPath>, TableCsv>,
 }
 
-fn table_location_to_filename(root_name: &String, table_path: &Vec<JsonPath>) -> String {
-    fn json_path_to_str(json_loc: &JsonPath) -> String {
-        json_loc.join(".")
-    }
-
-    table_path
-        .iter()
-        .map(|name| json_path_to_str(name))
-        .fold(root_name.clone(), |prev, next| prev + "-" + &next)
-}
-
 impl DatabaseCsv {
-    pub fn new(name: String, path: PathBuf) -> DatabaseCsv {
+    pub fn new(schema: DatabaseSchema, path: PathBuf) -> DatabaseCsv {
+        let mut data_path = path.clone();
+        data_path.push("data");
+
+        match create_dir(path.clone()) {
+            Ok(_) => {
+                create_dir(data_path).expect("could not create data directory");
+            }
+            Err(_) => {
+                create_dir(data_path).expect("could not create data directory (already exists?)");
+            }
+        }
+
         DatabaseCsv {
             tables: HashMap::new(),
-            name,
             path,
+            schema,
         }
     }
 
     fn get_or_create_table_mut(&mut self, table_path: &Vec<JsonPath>) -> &mut TableCsv {
         if !self.tables.contains_key(table_path) {
-            let table_name = table_location_to_filename(&self.name, table_path);
+            // Table schema can only be poped once, transferring ownership of the schema to the table
+            // Consequent calls to pop table_schema for same table path should panic
+            let table_schema = self.schema.borrow_table_schema(table_path).unwrap();
+            let table_name = &table_schema.name;
 
             let data_filename = table_name.clone() + ".csv";
-            let schema_filename = table_name.clone() + ".json";
 
             let mut data_path = self.path.clone();
+            data_path.push("data");
             data_path.push(data_filename);
-            let mut schema_path = self.path.clone();
-            schema_path.push(schema_filename);
 
             let data_file = File::create(data_path.as_path()).unwrap();
-            let schema_file = File::create(schema_path.as_path()).unwrap();
 
             self.tables
-                .insert(table_path.clone(), TableCsv::new(data_file, schema_file));
+                .insert(table_path.clone(), TableCsv::new(table_schema, data_file));
         }
         self.tables.get_mut(table_path).unwrap()
     }
 }
 
 impl Database for DatabaseCsv {
+    fn get_schema(&self) -> &DatabaseSchema {
+        &self.schema
+    }
+
+    fn get_schema_mut(&mut self) -> &mut DatabaseSchema {
+        &mut self.schema
+    }
+
     fn write(&mut self, loc: TableLocation, record: TableRecord) {
         let table = self.get_or_create_table_mut(&loc.table_path);
         table.write(loc, record);
     }
 
-    fn flush(&mut self) {
-        for table in self.tables.values_mut() {
-            table.flush();
+    fn close(&mut self) {
+        for (table_path, table) in self.tables.iter_mut() {
+            table.close();
+            self.schema.return_table_schema(
+                table_path,
+                table
+                    .pop_schema()
+                    .expect("Tried return non-existent schema"),
+            );
         }
+
+        self.schema.ensure_all_tables_returned();
+
+        // Save schema o file
+        let mut schema_filename = self.path.clone();
+        schema_filename.push("schema.json");
+        let schema_file = File::create(schema_filename.as_path()).unwrap();
+        serde_json::to_writer_pretty(BufWriter::new(schema_file), &self.schema)
+            .expect("Could not write schema file");
     }
 }

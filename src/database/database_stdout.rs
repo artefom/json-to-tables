@@ -1,3 +1,4 @@
+use crate::database::DatabaseSchema;
 use crate::parser::{TableLocation, TableRecord};
 
 use super::Database;
@@ -13,9 +14,17 @@ impl DatabaseStdout {
 }
 
 impl Database for DatabaseStdout {
+    fn get_schema(&self) -> &DatabaseSchema {
+        todo!()
+    }
+
+    fn get_schema_mut(&mut self) -> &mut DatabaseSchema {
+        todo!()
+    }
+
     fn write(&mut self, table: TableLocation, record: TableRecord) {
         println!("{:?}: {:?}", table, record)
     }
 
-    fn flush(&mut self) {}
+    fn close(&mut self) {}
 }

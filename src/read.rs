@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::hash::Hash;
 use std::io::BufRead;
 
 use crate::database::Database;
@@ -71,11 +70,11 @@ impl IdRemapper {
                     }
                 };
                 // Clone current id before incrementing, increment and return cloned
-                let i = current_id.clone();
+                let insertion_id = current_id.clone();
                 // Remember id to which we mapped the data
-                remapper_id_store.insert(object_id, i);
+                remapper_id_store.insert(object_id, insertion_id);
                 *current_id += 1;
-                i
+                insertion_id
             }
         }
     }
@@ -88,18 +87,20 @@ impl IdRemapper {
     }
 }
 
-pub fn read_to_db_many<D: Database, B: BufRead>(
-    mut database: D,
-    readers: Vec<B>,
-    callback_success: &mut dyn FnMut(),
+pub fn read_to_db_many<D: Database, B: BufRead, C>(
+    database: &mut D,
+    readers: Vec<(C, B)>,
+    callback_success: &mut dyn FnMut(C, usize),
 ) {
     let mut id_remapper = IdRemapper::new();
 
-    for mut reader in readers {
+    for (args, mut reader) in readers {
         let remapper_id = id_remapper.start_remapper();
+        let mut num_records: usize = 0;
 
         let mut consumer = |mut loc: TableLocation, rec: TableRecord| {
             loc = id_remapper.remap_ids(remapper_id, loc);
+            num_records += 1;
             database.write(loc, rec)
         };
 
@@ -109,7 +110,6 @@ pub fn read_to_db_many<D: Database, B: BufRead>(
 
         id_remapper.finish_remapper(remapper_id);
 
-        (callback_success)();
+        (callback_success)(args, num_records);
     }
-    database.flush();
 }

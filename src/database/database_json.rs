@@ -4,6 +4,7 @@ use std::vec::Vec;
 use regex::Regex;
 use serde_json::{Map, Value as JsonValue};
 
+use crate::database::DatabaseSchema;
 use crate::parser::{JsonPath, TableLocation, TableRecord};
 
 use super::Database;
@@ -125,6 +126,14 @@ impl<'a> DatabaseJson<'a> {
 }
 
 impl<'a> Database for DatabaseJson<'a> {
+    fn get_schema(&self) -> &DatabaseSchema {
+        todo!()
+    }
+
+    fn get_schema_mut(&mut self) -> &mut DatabaseSchema {
+        todo!()
+    }
+
     fn write(&mut self, table: TableLocation, record: TableRecord) {
         let table_name = table_path_to_str(&self.root_name, &table.table_path);
 
@@ -139,5 +148,5 @@ impl<'a> Database for DatabaseJson<'a> {
             .push(record_to_json(&self.root_name, &table, &record));
     }
 
-    fn flush(&mut self) {}
+    fn close(&mut self) {}
 }
