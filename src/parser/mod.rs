@@ -4,6 +4,7 @@ use std::mem::swap;
 use std::string::String;
 use std::vec::Vec;
 
+use anyhow::Result;
 use serde_json::Value as JsonValue;
 
 pub use models::{JsonPath, TableLocation, TableRecord};
@@ -154,7 +155,11 @@ pub struct NestedObjectHandler<'a> {
     handler_stack: ObjectHandlerHashTree,
 
     // stack of object handlers
-    consumer: &'a mut dyn FnMut(TableLocation, TableRecord),
+    consumer: &'a mut dyn FnMut(TableLocation, TableRecord) -> Result<()>,
+
+    // Accumulates errors on parsing
+    // Aborts on first error
+    pub error: Option<anyhow::Error>,
 }
 
 impl<'a> Debug for NestedObjectHandler<'a> {
@@ -164,9 +169,12 @@ impl<'a> Debug for NestedObjectHandler<'a> {
 }
 
 impl<'a> NestedObjectHandler<'a> {
-    pub fn new(consumer: &'a mut dyn FnMut(TableLocation, TableRecord)) -> NestedObjectHandler<'a> {
+    pub fn new(
+        consumer: &'a mut dyn FnMut(TableLocation, TableRecord) -> Result<()>,
+    ) -> NestedObjectHandler<'a> {
         NestedObjectHandler {
             handler_stack: ObjectHandlerHashTree::new(),
+            error: None,
             consumer,
         }
     }
@@ -183,7 +191,7 @@ impl<'a> NestedObjectHandler<'a> {
         self.handler_stack.parent()
     }
 
-    fn try_pop(&mut self) {
+    fn try_pop(&mut self) -> Result<()> {
         match self.current_handler_mut().pop() {
             Some((rec_id, rec)) => {
                 let table_location = TableLocation {
@@ -194,9 +202,9 @@ impl<'a> NestedObjectHandler<'a> {
                         None => 0,
                     },
                 };
-                (self.consumer)(table_location, rec);
+                (self.consumer)(table_location, rec)
             }
-            None => {}
+            None => Ok(()),
         }
     }
 }
@@ -204,19 +212,35 @@ impl<'a> NestedObjectHandler<'a> {
 impl<'a> Handler for NestedObjectHandler<'a> {
     fn handle_json_value(&mut self, _ctx: &Context, val: JsonValue) -> Status {
         self.current_handler_mut().handle_json_value(val);
-        self.try_pop();
-        Status::Continue
+        match self.try_pop() {
+            Ok(_) => Status::Continue,
+            Err(e) => {
+                self.error = Some(e);
+                Status::Abort
+            }
+        }
     }
 
     fn handle_start_map(&mut self, _ctx: &Context) -> Status {
         self.current_handler_mut().handle_start_map();
-        Status::Continue
+        match self.try_pop() {
+            Ok(_) => Status::Continue,
+            Err(e) => {
+                self.error = Some(e);
+                Status::Abort
+            }
+        }
     }
 
     fn handle_end_map(&mut self, _ctx: &Context) -> Status {
         self.current_handler_mut().handle_end_map();
-        self.try_pop();
-        Status::Continue
+        match self.try_pop() {
+            Ok(_) => Status::Continue,
+            Err(e) => {
+                self.error = Some(e);
+                Status::Abort
+            }
+        }
     }
 
     fn handle_map_key(&mut self, _ctx: &Context, key: &str) -> Status {
@@ -232,7 +256,12 @@ impl<'a> Handler for NestedObjectHandler<'a> {
 
     fn handle_end_array(&mut self, _ctx: &Context) -> Status {
         self.handler_stack.go_up();
-        self.try_pop();
-        Status::Continue
+        match self.try_pop() {
+            Ok(_) => Status::Continue,
+            Err(e) => {
+                self.error = Some(e);
+                Status::Abort
+            }
+        }
     }
 }

@@ -1,3 +1,5 @@
+use anyhow::Result;
+
 use crate::database::DatabaseSchema;
 use crate::parser::{TableLocation, TableRecord};
 
@@ -22,9 +24,12 @@ impl Database for DatabaseStdout {
         todo!()
     }
 
-    fn write(&mut self, table: TableLocation, record: TableRecord) {
-        println!("{:?}: {:?}", table, record)
+    fn write(&mut self, table: TableLocation, record: TableRecord) -> Result<()> {
+        println!("{:?}: {:?}", table, record);
+        Ok(())
     }
 
-    fn close(&mut self) {}
+    fn close(&mut self) -> Result<()> {
+        Ok(())
+    }
 }

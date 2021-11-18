@@ -1,15 +1,22 @@
 use std::collections::HashMap;
 use std::io::BufRead;
 
+use anyhow::{Context, Result};
+
 use crate::database::Database;
 use crate::parser::{JsonPath, NestedObjectHandler, TableLocation, TableRecord};
 use crate::yajlish::Parser;
 
-pub fn read_to_db<D: Database, B: BufRead>(mut database: D, mut reader: B) {
+pub fn read_to_db<D: Database, B: BufRead>(mut database: D, mut reader: B) -> Result<()> {
     let mut consumer = |loc: TableLocation, rec: TableRecord| database.write(loc, rec);
     let mut handler = NestedObjectHandler::new(&mut consumer);
     let mut parser = Parser::new(&mut handler);
-    parser.parse(&mut reader).unwrap();
+    parser.parse(&mut reader).context("Could not parse json")?;
+
+    match handler.error {
+        None => Ok(()),
+        Some(e) => Err(e.context("Parsing finished with error")),
+    }
 }
 
 /// Remaps ids from local parsers to global
@@ -91,7 +98,7 @@ pub fn read_to_db_many<D: Database, B: BufRead, C>(
     database: &mut D,
     readers: Vec<(C, B)>,
     callback_success: &mut dyn FnMut(C, usize),
-) {
+) -> Result<()> {
     let mut id_remapper = IdRemapper::new();
 
     for (args, mut reader) in readers {
@@ -106,10 +113,19 @@ pub fn read_to_db_many<D: Database, B: BufRead, C>(
 
         let mut handler = NestedObjectHandler::new(&mut consumer);
         let mut parser = Parser::new(&mut handler);
-        parser.parse(&mut reader).unwrap();
+        parser.parse(&mut reader).context("Could not parse json")?;
+
+        match handler.error {
+            None => {}
+            Some(e) => {
+                return Err(e.context("Parsing finished with an error"));
+            }
+        }
 
         id_remapper.finish_remapper(remapper_id);
 
         (callback_success)(args, num_records);
     }
+
+    Ok(())
 }

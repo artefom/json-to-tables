@@ -1,3 +1,5 @@
+use anyhow::Result;
+
 pub use database_csv::DatabaseCsv;
 pub use database_json::DatabaseJson;
 pub use database_stdout::DatabaseStdout;
@@ -14,6 +16,6 @@ pub mod schema;
 pub trait Database {
     fn get_schema(&self) -> &DatabaseSchema;
     fn get_schema_mut(&mut self) -> &mut DatabaseSchema;
-    fn write(&mut self, table: TableLocation, record: TableRecord);
-    fn close(&mut self);
+    fn write(&mut self, table: TableLocation, record: TableRecord) -> Result<()>;
+    fn close(&mut self) -> Result<()>;
 }

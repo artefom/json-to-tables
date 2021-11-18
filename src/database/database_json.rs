@@ -1,6 +1,7 @@
 use std::string::String;
 use std::vec::Vec;
 
+use anyhow::{anyhow, Error, Result};
 use regex::Regex;
 use serde_json::{Map, Value as JsonValue};
 
@@ -83,8 +84,7 @@ fn table_path_to_str(root_name: &String, nested_key: &Vec<JsonPath>) -> String {
 }
 
 fn record_to_json(root_name: &String, loc: &TableLocation, rec: &TableRecord) -> serde_json::Value {
-    let mut return_val = serde_json::Value::Object(Map::new());
-    let obj = return_val.as_object_mut().unwrap();
+    let mut obj = Map::<String, serde_json::Value>::new();
 
     // Insert values
     for (path, val) in rec.iter() {
@@ -111,7 +111,7 @@ fn record_to_json(root_name: &String, loc: &TableLocation, rec: &TableRecord) ->
         );
     }
 
-    return_val
+    serde_json::Value::Object(obj)
 }
 
 pub struct DatabaseJson<'a> {
@@ -134,19 +134,23 @@ impl<'a> Database for DatabaseJson<'a> {
         todo!()
     }
 
-    fn write(&mut self, table: TableLocation, record: TableRecord) {
+    fn write(&mut self, table: TableLocation, record: TableRecord) -> Result<()> {
         let table_name = table_path_to_str(&self.root_name, &table.table_path);
-
-        let obj = self.target.as_object_mut().unwrap();
+        let obj = self
+            .target
+            .as_object_mut()
+            .ok_or::<Error>(anyhow!("Target object is not a mapping"))?;
         if !obj.contains_key(&table_name) {
             obj.insert(table_name.clone(), serde_json::Value::Array(Vec::new()));
         }
-
         obj[&table_name]
             .as_array_mut()
             .unwrap()
             .push(record_to_json(&self.root_name, &table, &record));
+        Ok(())
     }
 
-    fn close(&mut self) {}
+    fn close(&mut self) -> Result<()> {
+        Ok(())
+    }
 }

@@ -7,11 +7,12 @@ edition = "2021"
 
 [dependencies]
 serde_json = { version = "*", features = ["arbitrary_precision"] }
-regex = "1.5"
+regex = "*"
 lazy_static = "*"
 structopt = "*"
 glob = "*"
 json-tools = "*"
+anyhow = "*"
 serde = { version = "*", features = ["derive"] }
 
 [dev-dependencies]
